@@ -1,6 +1,6 @@
 ---
 name: dp-session-code-review
-description: "Use ONLY when the user explicitly asks to review what was changed in this session — e.g. \"review-zd a session összes módosítását\", \"review the session's changes\", \"nézd át amit módosítottunk\", \"review what changed since the last review\". Re-reads the session's own edits from disk and judges them from six perspectives: goals reached, consistency, minimalism / no overengineering, logic gaps + side effects, data flow + user flow, SRP + SoC. MUST NOT be auto-invoked — not during /speckit.implement or /speckit.phase, not after an ordinary edit, not as an unasked self-check."
+description: "Use ONLY when the user explicitly asks to review what was changed in this session — e.g. \"review-zd a session összes módosítását\", \"review the session's changes\", \"nézd át amit módosítottunk\", \"review what changed since the last review\". Re-reads the session's own edits from disk and judges them from six perspectives: goals reached, consistency, minimalism / no overengineering, logic gaps + side effects, data flow + user flow, SRP + SoC. MUST NOT be auto-invoked — not during /dpf.implement or /dpf.phase, not after an ordinary edit, not as an unasked self-check."
 allowed-tools:
   - Read
   - Grep

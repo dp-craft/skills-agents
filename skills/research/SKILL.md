@@ -1,6 +1,6 @@
 ---
 name: research
-description: "Use ONLY when the user explicitly asks for research on a topic (research/investigate X, compare these options, find a library, is X feasible, what's been tried before) — routes to the matching `/research:*` command and enforces saving the result under docs/research/; MUST NOT be auto-invoked during speckit phase execution (/speckit.implement, /speckit.phase), nor for ordinary questions, debugging, or implementation work."
+description: "Use ONLY when the user explicitly asks for research on a topic (research/investigate X, compare these options, find a library, is X feasible, what's been tried before) — routes to the matching `/research:*` command and enforces saving the result under docs/research/; MUST NOT be auto-invoked during dpf phase execution (/dpf.implement, /dpf.phase), nor for ordinary questions, debugging, or implementation work."
 ---
 
 # research — route an explicit research request to the right `/research:*` command

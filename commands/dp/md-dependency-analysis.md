@@ -46,7 +46,7 @@ Discover all configuration files that participate in the Claude loading chain:
 | Agents | `.claude/agents/` | `*.md` |
 | Commands | `.claude/commands/` | `**/*.md` |
 | Skills | `.claude/skills/` | `**/*.md` (if exists) |
-| Supporting | `claude-artifacts/` | `LSP.md`, `git-strategy.md`, `speckit/*.md`, `project-snapshot/SNAPSHOT.md` |
+| Supporting | `claude-artifacts/` | `LSP.md`, `git-strategy.md`, `dpf/*.md`, `project-snapshot/SNAPSHOT.md` |
 
 For each file, read it and extract:
 - `@file.md` references (auto-loaded dependencies)

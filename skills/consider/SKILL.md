@@ -1,6 +1,6 @@
 ---
 name: consider
-description: "Use ONLY when the user explicitly asks for help thinking a decision through or names a thinking framework (find the root cause, what am I giving up, what could go wrong, prioritize these, simplify this) — routes to the matching `/consider:*` framework command; MUST NOT be auto-invoked during speckit phase execution (/speckit.implement, /speckit.phase), nor for research requests or ordinary implementation work."
+description: "Use ONLY when the user explicitly asks for help thinking a decision through or names a thinking framework (find the root cause, what am I giving up, what could go wrong, prioritize these, simplify this) — routes to the matching `/consider:*` framework command; MUST NOT be auto-invoked during dpf phase execution (/dpf.implement, /dpf.phase), nor for research requests or ordinary implementation work."
 ---
 
 # consider — route a decision-framing request to the right `/consider:*` command

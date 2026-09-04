@@ -385,8 +385,8 @@ See: [full stress-test](sub-results/...)
 
 After saving all files, present the decision menu. End the brainstorm by asking what the user wants to do next. Use AskUserQuestion with options tailored to the situation. Common options:
 
-- **Proceed to specification** — take the chosen approach into `/speckit.specify`
-- **Proceed to planning** — if spec already exists, go to `/speckit.plan`
+- **Proceed to specification** — take the chosen approach into `/dpf.specify`
+- **Proceed to planning** — if spec already exists, go to `/dpf.plan`
 - **Research deeper** — dig into a specific finding or uncertainty
 - **Run a thinking tool** — apply a specific consider framework
 - **Explore a different angle** — restart brainstorm with new constraints
