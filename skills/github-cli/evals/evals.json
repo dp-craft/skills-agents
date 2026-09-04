@@ -1,0 +1,72 @@
+{
+  "skill_name": "github-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a pull request from the current branch with title 'Fix: Update error handling in auth module'. The branch has already been pushed to origin. Include a brief description about improving error messages.",
+      "expected_output": "PR created successfully with JSON response containing PR number and URL",
+      "files": [],
+      "expectations": [
+        "The gh command uses --json flag to get structured output",
+        "PR is created with the specified title",
+        "PR description/body is included",
+        "Output includes PR number and URL",
+        "Command targets current branch using HEAD or similar"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "List all open pull requests in the repository that need my review. Show the PR number, title, author, and whether it's mergeable.",
+      "expected_output": "List of PRs formatted from JSON output showing number, title, author, and mergeable status",
+      "files": [],
+      "expectations": [
+        "Uses --review-requested @me to filter PRs needing review",
+        "gh command includes --state open flag",
+        "JSON output requested with --json flag",
+        "Response includes number, title, author fields",
+        "Mergeable status is checked and displayed",
+        "Output is parsed from JSON and presented cleanly to user"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Edit issue #42 to update the title to 'Bug: API authentication fails with 401 error' and add more details to the description. Also add the 'bug' label.",
+      "expected_output": "Issue updated successfully with new title, description, and label",
+      "files": [],
+      "expectations": [
+        "Uses gh issue edit command to update the issue",
+        "Title is updated to the specified new title",
+        "Description/body is updated with additional details",
+        "Bug label is added using --add-label flag",
+        "Uses --json flag to get confirmation of changes",
+        "Returns formatted confirmation of the updates"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Create a new issue with title 'Bug: Login page showing 500 error' and body describing the error. Label it as 'bug' and assign it to me.",
+      "expected_output": "Issue created successfully with JSON response and proper labeling/assignment",
+      "files": [],
+      "expectations": [
+        "Issue created with specified title and body",
+        "Uses --json flag to get structured response",
+        "Output includes issue number and URL",
+        "Issue is labeled as 'bug'",
+        "Issue is assigned to the current user",
+        "Returns formatted confirmation with key details"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Update issue #55 by editing the description to include a link to the related documentation and removing the 'needs-info' label.",
+      "expected_output": "Issue successfully updated with new description link and label change",
+      "files": [],
+      "expectations": [
+        "Uses gh issue edit to update description",
+        "New description includes the documentation link",
+        "The 'needs-info' label is removed using --remove-label",
+        "Returns confirmation of successful updates"
+      ]
+    }
+  ]
+}
