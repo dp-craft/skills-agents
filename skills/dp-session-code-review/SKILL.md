@@ -23,7 +23,7 @@ Files this session changed, minus what an earlier review already cleared and not
 
 Read every in-scope file from disk. Then drop every claim you cannot point at with a line number — a branch you remember handling that case, a test you are sure passes. Unlocatable belief is transcript residue, and that is what the last review got wrong.
 
-## Six seats
+## Seats
 
 | Seat | Question                                                                                           |
 |---|----------------------------------------------------------------------------------------------------|
@@ -33,6 +33,7 @@ Read every in-scope file from disk. Then drop every claim you cannot point at wi
 | **Logic + side effects** | Who else observes what this mutates? Callers, subscribers, ordering. Check for logical gaps. |
 | **Data flow + user flow** | Follow one datum end to end; one user path through empty, loading, error, success.                 |
 | **SRP + SoC** | Delete this feature on paper — do outside files change?                                            |
+| **Test coverage** | Business logic changes are covered? tests ROI is high? Goals, data flow changes can be validated with tests?      |
 
 Verdict on every seat, clean ones included with one line of why. Unmentioned and clean look identical otherwise.
 

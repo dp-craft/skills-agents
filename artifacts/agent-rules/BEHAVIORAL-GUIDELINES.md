@@ -25,6 +25,4 @@ Multi-step plan format:
 
 Strong success criteria let you loop independently; weak ones force constant clarification.
 
-**Model selection:** Opus for coding subagents and complex tasks needing thinking; a cheap model (Haiku, or Sonnet when unsure) for simple tasks — log processing, data filtering, simple web search.
-
 **Working if:** fewer unnecessary changes in diffs, fewer rewrites from overcomplication, clarifying questions arriving before implementation rather than after mistakes.
