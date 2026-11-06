@@ -1,6 +1,6 @@
 ---
 name: dp-fan-out-subagents
-description: Route work to the cheapest subagent that does it well, and run it — free local Ornith or Qwen 27B, Claude Haiku, Sonnet or Opus. Load it BEFORE any Agent/subagent call, and whenever the user says fan out, use subagents, delegate, use ornith, use haiku, use local, local agent, or do it for free. Covers which model and effort fit, the local server state, result files, parallel limits and the temporary review counts.
+description: Route work to the cheapest subagent that does it well, and run it — free local Ornith or Qwen 27B, Claude Haiku, Sonnet or Opus. Load it BEFORE any Agent/subagent call, and whenever the user says fan out, use subagents, delegate, use ornith, use haiku, use local, local agent, or do it for free. Covers which model and effort fit, the local server state, session size and splitting, result files, parallel limits and the temporary review counts.
 allowed-tools: Bash(/home/dev/work/dippe/skills-agents/skills/dp-fan-out-subagents/scripts/local.sh:*), Bash(/home/dev/work/dippe/skills-agents/skills/dp-fan-out-subagents/scripts/local-status.sh:*), Bash(/home/dev/work/dippe/skills-agents/skills/dp-fan-out-subagents/scripts/run-dir.sh:*), Bash(/home/dev/work/dippe/skills-agents/skills/dp-fan-out-subagents/scripts/reviews.py:*)
 compatibility:
   tools:
@@ -19,19 +19,26 @@ guide only names agent types). A worker the user names wins; if the table disagr
 
 ## 1. Pick the worker
 
+**Ornith and the 27B are free**: the local GPU, no token bill; Claude workers bill every token. **If a local model can
+do the job, it does it**: the Ornith row, and while the 27B is up also the Haiku and Sonnet rows (below). The task waits
+in the local queue (§4), also behind the 27B's single slot, and never moves to Claude because the slots are busy: with
+both Ornith slots taken, Haiku still starts only for work Ornith can't do. Claude takes local work only when the local
+model can't run (§2). Free still costs review tokens (§5) and the GPU: Ornith fills the card, so no benchmark runs
+beside it.
+
 | Task | Worker | Effort |
 |---|---|---|
-| A script, test or `grep` can check it: JSON/log questions, code inventory, writing tests, renames, clear bug fix, fixed-form summary, document notes, grouping, splitting or sorting documents | **Ornith** (free; fallback Haiku `high`) | — |
+| A script, test or `grep` can check it: JSON/log questions, code inventory, writing tests, renames, clear bug fix, fixed-form summary, document notes, grouping, splitting or sorting documents | **Ornith** (free; Haiku `high` only when Ornith can't run, §2) | — |
 | Lookups, routine single-source web search, mechanical work when local is unavailable | Haiku | `high` |
 | Completeness: full lists, paths, full configs, incidents, retyping text, notes on many documents | Haiku | `xhigh` |
 | A small, clearly specified code change (one file or module); non-trivial analysis (connections, consistency, logical gaps) | Haiku | `max` |
 | Agentic coding, usual implementation of a few tasks | **Qwen 27B** (free) when it is up, else Sonnet | Sonnet: `high` |
 | Usual web research | Sonnet | `high` |
-| Investigation, architecture, complex cases, TDD with negative and edge cases, holistic view, mission-critical or high-impact work (token-heavy runners, blockers); reviews and grading, except Ornith's non-code results (§4) | Opus | `high` |
+| Investigation, architecture, complex cases, TDD with negative and edge cases, holistic view, mission-critical or high-impact work (token-heavy runners, blockers); reviews and grading, except Ornith's non-code results (§5) | Opus | `high` |
 
 - **While the 27B is up** (`sly-27b` in `local-status.sh`), it also takes the Ornith, Haiku and Sonnet rows by default:
   `local.sh --model 27b` with the row's profile (`read` for lookups and notes, `data` for counts and JSON, `code` or
-  `--agent` for code). Not for web search (the local route has no web tools), the Opus row, or reviews (§4).
+  `--agent` for code). Not for web search (the local route has no web tools), the Opus row, or reviews (§5).
 - Haiku never below `high`. At `max`, one file or module per call: a 4-file job at `max` thought past the 128k output limit and wrote nothing.
 - Between two rows, take the stronger one: a weak result costs more to review and fix than the price gap.
 - Sonnet and the 27B are not for the Opus row.
@@ -46,7 +53,7 @@ Server labels: `sly-27b` (the 27B on Sly), `rad-ornith` (Ornith on radiance), `o
 
 | State | Action |
 |---|---|
-| The 27B is up, or the wanted model is up | Run; `local.sh` waits for a free slot if other sessions use it |
+| The 27B is up, or the wanted model is up | Run; when the slots are full (this session's runs or other sessions'), `local.sh` waits for one: queue, don't switch to Claude |
 | Other work uses the server: `vllm` shows requests but no run is listed as via local.sh, or headless runs not via local.sh are listed (a pipeline, a benchmark) | Add no local run and no agent that polls the server: use the Claude fallback, or ask |
 | Nothing up | Ask: start it, or use the fallback (Haiku for Ornith work, Sonnet for 27B work) |
 | Ornith is up and the task is 27B work | Ask: switch, use Ornith, or Sonnet. Recommend Sonnet when other sessions or headless runs are listed: they may be using Ornith |
@@ -70,9 +77,43 @@ Every worker writes a result file, so a crash or reset loses no finished work.
 
 **Parallel cap: 2** — at most this many Claude subagents and this many local runs at once (the 27B: 1, its server runs
 one sequence). This line is the only place that sets it: `local.sh` reads the number from here and enforces it across
-sessions.
+sessions. The two counts are separate: Claude slots run Claude-row tasks beside the local runs, never queued local work.
 
-## 4. Review (temporary, until the user drops it)
+## 4. Size and split
+
+Measure before writing briefs: source tokens ≈ bytes / 4 (`wc -c <files>`; a directory:
+`find <dir> -type f -name '*.md' -exec cat {} + | wc -c`). Every session stays under its worker's ceiling: past it the
+session compacts and loses detail.
+
+| Worker | Ceiling (peak context) | Source per session |
+|---|---|---|
+| Ornith, Qwen 27B, Haiku | 180k | About 100k, or the task's lower limit (`refs/ornith.md`). Haiku `max`: one file or module |
+| Sonnet, Opus | 250k | About 170k: a new session re-reads its files, and that costs more here than a bigger context |
+
+The rest, about 80k, is for the system prompt, reasoning, tool output and the result. `local.sh` logs each run's peak
+context and marks a run that compacted `STATUS: partial`: re-run it in smaller pieces.
+
+Split by what the task needs, not only by size. Common cases:
+
+| Case | Plan |
+|---|---|
+| The same job on many files, no view across them: summaries, notes, inventories, JSON or log questions | The §1 worker (Ornith for its rows: free), one file per session; batch small files up to about 100k per session. A file over the limit: cut it at its `## ` sections or time windows, or use a brief that greps it (`log`) |
+| Results must line up across sessions: same labels, terms, format | Fix them in the brief. If they come from the material, a first session writes a shared file (label list, glossary) that every later session reads. Or keep the job in one session if it fits |
+| A view across files: duplicates, conflicts, grouping, consistency | Two passes: the §1 worker per file with fixed fields (a detailed summary already shows most duplicates), then Haiku `max` or Opus over the result files only; over budget, merge them in groups first |
+| Code and thinking tasks: bug fix, implementation, investigation | Split by subtask, not size: one module per call. If it can't be cut without losing the view it needs, move up a row instead |
+
+Anything else: plan it. Ask what each session must know from the others and what splitting loses; if that is a lot,
+don't split.
+
+Running a split job:
+1. One result file per piece (`run-dir.sh <worker> <slug>-p01`, `-p02`, …), the same brief and fields for each.
+2. Independent pieces run in parallel up to the cap; the rest queue. Local queue: one background loop per slot (Ornith 2,
+   the 27B 1), each running its pieces one after another; `local.sh` also holds any extra run until a slot frees. A piece
+   that needs an earlier one runs after it and reads a short carry file (the shared list), not the earlier results.
+3. Check each piece, then merge: a script when the fields are fixed (`cat`, `sort`, `jq`), else a worker that reads only
+   the result files. Re-run only the pieces that are not `STATUS: done`.
+
+## 5. Review (temporary, until the user drops it)
 
 Every code review is Opus `high`: the rows below and any review a repo asks for (e.g. dp-plan's batch review).
 Haiku reviews only Ornith's non-code results, nothing else.
@@ -84,6 +125,13 @@ Haiku reviews only Ornith's non-code results, nothing else.
 | Haiku at `max` | Opus | `high` | — |
 
 The 27B has no row: the user has checked its work (a repo's own review step still runs). Ideas for later: `IDEAS.md`.
+
+**Split jobs (§4) whose pieces share one brief:** review a sample, 1 piece in 5 and at least one: the largest, plus any
+piece that needed a re-run. Each review gets one piece's brief, sources and result, so it fits one session. On a `major`,
+review the other pieces too: they ran the same brief. Nothing reviews the whole against all the sources; it wouldn't fit,
+which is why the job was split. The whole gets the free checks (every input in a piece, counts add up, the same labels
+in every piece), and a merge or cross-file pass done by a worker is a result of its own, reviewed by its row. Pieces with
+different briefs (code subtasks) are separate tasks: each one is reviewed.
 
 1. Run the free check first (`refs/ornith.md`: script, test, `grep`, count). If it fails, re-run or fix before reviewing.
 2. The reviewer gets the brief, the source paths and the result file, and writes `<result minus .md>-review.md`

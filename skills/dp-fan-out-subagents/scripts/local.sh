@@ -16,7 +16,9 @@
 #   Add more with --append-system-prompt-file; the text flag --append-system-prompt would replace it.
 # Parallel cap, across all sessions: Ornith takes the number on SKILL.md's `**Parallel cap: N**` line (the only place
 #   that sets it), the 27b 1 (its server runs one sequence); a further run waits for a free slot.
-# Every run appends one usage line to ~/.local/state/dp-fan-out-subagents/local-runs.jsonl (read by statusline.py).
+# Every run appends one usage line to ~/.local/state/dp-fan-out-subagents/local-runs.jsonl (read by statusline.py),
+#   with peak (the largest single call, the real context size) and compacts, both read from the worker's transcript
+#   (none found: null and 0). A run that compacted gets `STATUS: partial` on its --out file's first line.
 # Env: MAX_TURNS (default 80; a trailing --max-turns works too). LOCAL_SETTINGS overrides settings.json.
 #   ORNITH_PROMPT=none leaves dp out. LOCAL_RAW_OUT=FILE saves the raw JSON result (turns, duration, tokens).
 set -euo pipefail
@@ -126,11 +128,27 @@ RAW="$(claude --settings "$RUN_SETTINGS" \
 [ -n "$RAW" ] || fail "claude exited $RC with no output" "$(( RC == 0 ? 1 : RC ))"
 [ -z "${LOCAL_RAW_OUT:-}" ] || { mkdir -p "$(dirname "$LOCAL_RAW_OUT")"; printf '%s\n' "$RAW" > "$LOCAL_RAW_OUT"; }
 
+# Peak context (counted as statusline.py does, or a compaction's preTokens when higher: the tool result that set it off
+# was never sent) and compactions, from the worker's transcript.
+SID="$(printf '%s\n' "$RAW" | jq -r '.session_id // empty' 2>/dev/null || true)"
+TRANSCRIPT=""
+[ -z "$SID" ] || TRANSCRIPT="$(find "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects" -maxdepth 2 -name "$SID.jsonl" 2>/dev/null | head -1 || true)"
+PEAK=null; COMPACTS=0
+[ -z "$TRANSCRIPT" ] || read -r PEAK COMPACTS < <(jq -Rrn 'reduce (inputs | fromjson? | objects) as $l ({p: 0, c: 0};
+  if $l.type == "system" and $l.subtype == "compact_boundary" then .c += 1 | .p = ([.p, ($l.compactMetadata.preTokens? // 0)] | max)
+  else (($l.message? | objects | .usage? | objects) // null) as $u
+    | if $u then .p = ([.p, ($u.input_tokens // 0) + ($u.cache_creation_input_tokens // 0)
+        + ($u.cache_read_input_tokens // 0)] | max) else . end end) | "\(.p) \(.c)"' "$TRANSCRIPT" 2>/dev/null || echo "null 0")
+NOTE=""
+[ "$COMPACTS" -eq 0 ] || NOTE="the session compacted $COMPACTS time(s), peak context $PEAK tokens: details may be lost; re-run it in smaller pieces"
+
 printf '%s\n' "$RAW" | jq -c --arg sid "${CLAUDE_CODE_SESSION_ID:-}" --arg model "$MODEL" --arg profile "$PROFILE" \
-  --arg agent "$AGENT" --arg cwd "$PWD" --arg out "$OUT" '{ts: (now | todate), session: $sid, model: $model,
+  --arg agent "$AGENT" --arg cwd "$PWD" --arg out "$OUT" --argjson peak "$PEAK" --argjson compacts "$COMPACTS" \
+  '{ts: (now | todate), session: $sid, model: $model,
   profile: $profile, agent: $agent, cwd: $cwd, out: $out, ok: ((.is_error | not) and ((.subtype // "success") == "success")),
   subtype, turns: .num_turns, duration_ms, fresh: (.usage.input_tokens // 0), cached: (.usage.cache_read_input_tokens // 0),
-  cache_write: (.usage.cache_creation_input_tokens // 0), out_tokens: (.usage.output_tokens // 0)}' \
+  cache_write: (.usage.cache_creation_input_tokens // 0), out_tokens: (.usage.output_tokens // 0), peak: $peak,
+  compacts: $compacts}' \
   >> "$STATE/local-runs.jsonl" 2>/dev/null || true
 
 RESULT="$(printf '%s\n' "$RAW" | jq -r 'if .is_error or (.subtype // "success") != "success" then "LOCAL ERROR: \(.subtype) \(.result // "")" else .result end')"
@@ -142,10 +160,19 @@ if [ -n "$OUT" ]; then
     if [ -n "$ERR" ]; then printf 'STATUS: failed\nSUMMARY: %s\n' "$ERR"; else printf '%s\n' "$RESULT"; fi > "$OUT"
     ERR=""
   fi
+  # A compacted session's result is partial at best (SKILL.md §4): §3 step 5 re-runs it.
+  if [ -n "$NOTE" ]; then
+    case "$(head -1 "$OUT")" in
+      "STATUS: failed"*|"STATUS: partial"*) ;;
+      "STATUS:"*) sed -i "1s/.*/STATUS: partial (local.sh: $NOTE)/" "$OUT";;
+      *) sed -i "1i STATUS: partial (local.sh: $NOTE)" "$OUT";;
+    esac
+  fi
   echo "RESULT FILE: $OUT"
   head -5 "$OUT"
   [ -z "$ERR" ] || printf '%s\n' "$ERR" | head -3
 else
   printf '%s\n' "$RESULT"
 fi
+[ -z "$NOTE" ] || echo "LOCAL WARNING: $NOTE"
 exit "$RC"
