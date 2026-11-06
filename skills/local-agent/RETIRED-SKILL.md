@@ -26,12 +26,15 @@ Runs a headless Claude Code session against the local llama-swap model and retur
    - The first call after a model swap loads the model (~60–90 s). For tasks likely to exceed ~2 min,
      use `run_in_background` and continue with other work.
    - Extra claude flags can follow the brief, e.g. `--max-turns 40`.
+   - `--agent <name>` runs the session as `.claude/agents/<name>.md` (its rules + tools); use it for
+     code-writer roles. It also unlocks LSP and `npx vitest|tsc|tsx`, `npm run|test`.
 3. **Verify before reporting.** Check `git diff` / run the relevant tests. Treat the output as a draft:
    fix or redo anything wrong yourself rather than passing it on unchecked.
 
 ## Limits
 
-- Tools available to the local agent: Read, Grep, Glob, Edit, Write, `git diff`, `git status`, `ls`.
+- Tools available to the local agent: Read, Grep, Glob, Edit, Write, `git diff`, `git status`, `ls`
+  (plus the `--agent` extras above).
   Anything else is denied (headless mode cannot prompt). Edits are auto-accepted.
 - One model in VRAM, concurrency 1 — local tasks run serially; don't launch several in parallel.
 - Output starting with `LOCAL AGENT ERROR:` means the run failed (llama-swap down, max turns hit, ...).

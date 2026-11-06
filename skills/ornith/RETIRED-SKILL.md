@@ -22,7 +22,7 @@ All figures come from measured runs, most of them a single run (`n=1`), on synth
 2. **Check the size.** "Tokens" means the source material. Estimate with `wc -c` divided by 4. Above the limit, split the work into several sessions.
 3. **Take the brief** from `references/briefs.md` and adapt its file names, labels and output format. The session knows nothing of this conversation, so give absolute paths.
 4. **Start the server if it's down.** `/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh start` takes about 45 s and fills the card. If another model holds port 8000, ask before stopping it.
-5. **Run it.** Use one session at a time, because the card serves one session well.
+5. **Run it.** Up to 3 sessions can run in parallel; a 4th waits in the queue. Three together gave about 1.46× the total throughput, at about 100 tokens/s per session against 174 alone.
    ```bash
    /home/dev/work/dippe/skills-agents/skills/ornith/scripts/ornith.sh --profile read "<brief>"
    ```
@@ -42,17 +42,41 @@ Scores are from 0 to 1. "Limit" is the recommended size per session, and "tested
 | Write tests for given code | `code`, tests | 1.0, killed 16 of 16 mutants | Small module | 41 s | Run the tests |
 | Multi-file rename or mechanical edit | `code`, rename | 1.0 | Small repo | 45 s | Tests and `git diff` |
 | Bug fix with a clear symptom | `code`, bug fix | 1.0 | Small module | 14 s | Run the tests |
-| Code from a clear spec | `code`, spec | 34 of 34, then 26 of 34 hidden tests, on the same brief | Small module | 148–163 s | **Draft.** Your own tests decide; it can report success and still fail 8 of 34 |
+| Code from a clear spec | `code`, spec | 34 of 34, then 26 of 34 hidden tests, on the same brief. One parser looped forever on one input | Small module | 148–163 s | **Draft.** Your own tests decide, run with a timeout; it can report success and still fail 8 of 34 |
 | Log triage | `read`, log | All planted faults found at 18k, 151k and 340k. Class list .90, 1.0, .80 | 100k; tested 151k once | 61–138 s | Good for finding faults; not a full list of error classes above 150k |
 | Fixed-form report summary | `read`, summary | Numbers 1.0 at 6k–55k. Blind grade of the conclusion 2–3 of 3 on most, the same range as Haiku; 4–5 of 5 key lines right | 55k tested | 19–71 s | Spot-check key numbers: errors are wrong labels on right numbers |
 | Notes on one document (conclusion, config, key facts, incidents) | `read`, notes | Scripted facts and planted incidents all found. Blind grade: conclusion and facts tie Haiku at `high`; config 4 of 8 vs 8 of 8; real incidents 10 vs 16 | One document per session; tested to about 29k (978 lines) | 37–152 s | Don't rely on it for a complete incident list or full configuration. Check any number that decides something |
-| Group documents by type | `read`, grouping | .85–.90 at 17k. 67k didn't finish in 14 min | 17k per session | About 3 min | Spot-check. Split larger sets into batches |
+| Group documents by type | `read`, grouping | .85–.90 at 17k. .89–.93 at 67k in 5 runs, given a 30 min cap | 17k per session; 67k if a spot-check is enough | About 3 min at 17k; 7–24 min at 67k with 3 in parallel | Spot-check. Otherwise split larger sets into batches |
 | Classify bug or finding text | `read`, bugs | .71 at 9k, .58 at 33k | 10k per session | About 4 min | **Draft.** Severity is weak (.56 exact, .97 within one level). Get paths with `grep`, not from the model |
+
+## System prompt
+
+On `data` and `code`, `ornith.sh` appends `references/prompt-dp.txt` (`dp`, 285 tokens) to Claude Code's own system prompt. `read` keeps Claude Code's prompt alone. `ORNITH_PROMPT=none` leaves `dp` out. To add task text, pass `--append-system-prompt-file <file>` after the brief: it adds to `dp`, while the text flag `--append-system-prompt` replaces it.
+
+Against Claude Code's prompt alone, with 3 runs per arm on the rows below and 1 on the rest:
+
+| Profile | Tasks | Generated tokens with `dp` | Score with `dp` |
+|---|---:|---|---|
+| `data` | 9 | 33% fewer | +.02; better on 1, worse on 0 |
+| `code` | 4 | 15% fewer | Tie, apart from a `testgen` 0.0 caused by permission denials |
+| `read` | 12 | 20% more | −.05; worse on 2, better on 0 |
+
+Replacing Claude Code's prompt with `dp` instead of appending it made no difference on notes (conclusion 6 of 12, 3 critical errors), so the weakness is in `dp`'s wording, not in what surrounds it.
+
+| Task | Without `dp` | With `dp` | Note |
+|---|---|---|---|
+| Log class list at 340k, of 21 | 16, 16, 21 | 21, 16, and one run in the wrong line format | Check the list and the format with a script |
+| Bug text | .705, .67, .67 | .637, .574, .675 | About .05 lower; still a draft |
+| Code from a spec, hidden tests | 1.0, .853, .765 | 1.0, 1.0, .824 | Your tests still decide |
+| Sorting 25k | .773, .864, .955 | .955, 1.0, .909 | |
+| Notes, blind grade on 4 reports, two grading rounds | Conclusion 8 and 9 of 12, config 4 of 8, no critical error | 6 and 7 of 12, 6 and 7 of 8, 1 and 3 critical errors | Check the conclusion |
+
+Per-profile add-ons on top of `dp` (sources and lists for `read`, compute by command for `data`, run the tests for `code`) tied on 13 of 16 tasks at 10% more tokens, so none is used. The `read` add-on found all 21 log classes in 3 of 3 runs but lost on two other tasks. Replacing Claude Code's prompt (`sa`) didn't help either.
 
 ## Don't use it for
 
 - **Retyping text.** Don't ask it to rewrite a document with a Write call, even a small one. A 6k-token split took 480 s and 69k generated tokens, and two more runs didn't finish in 10–12 minutes. The low-temperature preset didn't help. Use the manifest briefs, where a script moves the bytes. If text really must be retyped, use Haiku: 6k took 242 s with no loss.
-- **Exhaustive lists from long logs.** At 340k it found 16 of 21 error classes, while Haiku at `max` found all 21. It found the planted faults either way.
+- **Exhaustive lists from long logs, without checking them.** At 340k Ornith found all 21 error classes in 2 of 6 runs and 16 in 3, and Haiku at `max` found all 21. All runs found the planted faults.
 - **Path extraction by reading.** Ornith recalled .57–.76 of file paths in findings, Haiku .94–.97. Use `grep` for paths and Ornith for the labels.
 - **Final decisions.** Use a stronger model or a human for anything that gets acted on without further checks. This includes verdicts on reports and code that won't be tested.
 
@@ -75,6 +99,7 @@ These weren't measured. Use the closest tested row's limits and check the result
 What the tests showed:
 
 - **Keep clear tasks short.** Added rules and self-check steps seldom raised the score and often cost time. Only the judgement-heavy `bugs` task clearly gained.
+- **A short brief works when a tool does the work.** On `data`, the plain task-and-format brief scripted the move: a 6k split took 86 s instead of 480 s of retyping on `read`, a 55k split took 60 s, both with no loss, and JSON questions took 28–38 s instead of 65 s. On `read`, keep the tested briefs: short ones scored lower on bug text and grouping with any system prompt.
 - **Have it compute, not reason.** On JSON, moving to `jq` or `python3` took the time from 48–89 s to 17 s at the same score.
 - **Show a real example of the output line.** A format line with a placeholder like `CLASS|` got its placeholder replaced in every run.
 - **Give fixed output fields** so a script can check them.
@@ -83,12 +108,12 @@ What the tests showed:
 
 ## Limits and failure signs
 
-- **Profiles:** `read` has file tools only. `data` adds `jq` and `python3`, and `python3` can run anything, so use it only on material you trust. `code` adds edits, test runners and read-only git.
+- **Profiles:** `read` has file tools only. `data` adds `jq` and `python3`, and `python3` can run anything, so use it only on material you trust. `code` adds edits, test runners and read-only git. It denies compound commands with any part off the list, `npx --no-install`, `node` and paths outside the repo, so a `code` session hit 7–15 denials and sometimes never ran its tests. One shipped tests that fail on the original code. Run the tests yourself.
 - **Turn cap:** `ORNITH ERROR: error_max_turns` means it looped at the 80-turn cap. Rework the brief or move the task. Don't simply raise `MAX_TURNS`.
 - **Other errors:** `ORNITH ERROR: no server` means start the server. A port serving another model reports that model's name.
 - **Interrupted runs:** discard the output of a cut or timed-out session.
 - **Reasoning cost:** most generation can be reasoning (96% on the `bugs` M run), at 89–241 tokens/s, and context can pass 100k on small input when it loops. Slow runs are usually long reasoning, not slow generation.
-- **Memory:** the server holds up to 31.8 GiB of VRAM, nearly the whole card, so nothing else GPU-heavy can run alongside it. Stop it when you're done if something else needs the card.
+- **Memory:** the server held up to 29.2 GiB of VRAM (29,914 MiB) with 3 sessions running, nearly the whole card, so nothing else GPU-heavy can run alongside it. Stop it when you're done if something else needs the card.
 - **Sampler:** keep the default preset (temp 1.0, presence penalty 1.5). The precise preset (`EXTRA_ARGS="--temp 0.6 --presence-penalty 0" ornith_rad_mtp.sh start`) showed no clear benefit in 7 finished comparisons, and it didn't fix retyping.
 
 ## Output
