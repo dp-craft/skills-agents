@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# local-agent: run one self-contained task headless on the local llama-swap model
-# (settings: ~/.config/claude/local_muxik/settings.json) and print only the final result.
+# local-agent: run one self-contained task headless on the local vLLM model server
+# (settings: ~/.config/claude/local_vllm_direct/settings.json) and print only the final result.
 # usage: local-agent.sh "task" [extra claude args, e.g. --agent tools-code-logic-writer --max-turns 40]
 # With --agent <name>, the session runs as .claude/agents/<name>.md (its rules + tools) and may
 # also run tests / typecheck / npm scripts.
@@ -9,7 +9,7 @@ set -euo pipefail
 # The model server + settings come from LOCAL_AGENT_SETTINGS (default the llama-swap muxik).
 # Point it at a vLLM settings file (e.g. ~/.config/claude/local_vllm_direct/settings.json) to run
 # on a vLLM server; the reachability check is derived from that file's ANTHROPIC_BASE_URL.
-SETTINGS="${LOCAL_AGENT_SETTINGS:-/home/dev/.config/claude/local_muxik/settings.json}"
+SETTINGS="${LOCAL_AGENT_SETTINGS:-/home/dev/.config/claude/local_vllm_direct/settings.json}"
 
 if [ $# -lt 1 ] || [ -z "$1" ]; then
   echo "usage: local-agent.sh \"task\" [extra claude args]" >&2
