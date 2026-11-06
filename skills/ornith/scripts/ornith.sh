@@ -5,8 +5,11 @@
 #   data  read + jq and python3: anything that counts or computes over JSON. python3 can run any code.
 #   code  read + Edit, pytest, vitest, tsc, git diff/status: small coding tasks. Run it inside the target repo.
 # The session is clean: no CLAUDE.md, no MCP, no skills, no user settings. Runs in the current directory.
+# data and code append references/prompt-dp.txt to Claude Code's system prompt; read keeps Claude Code's alone.
+#   Add more with --append-system-prompt-file; the text flag --append-system-prompt would replace it.
 # Env: ORNITH_OUT=file saves the raw JSON result. MAX_TURNS (default 80). ORNITH_SETTINGS overrides settings.json.
-# One local agent at a time: the card serves one session well, so never run two of these in parallel.
+#   ORNITH_PROMPT=none leaves Claude Code's system prompt alone.
+# Up to 3 sessions can run in parallel (the server's --max-num-seqs 3); a 4th waits in the server queue.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,6 +31,13 @@ case "$PROFILE" in
     allowed="Read,Grep,Glob,Write,Edit,Bash(python3 -m pytest:*),Bash(pytest:*),Bash(npx vitest:*),Bash(npx tsc:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*)";;
   *) echo "unknown profile: $PROFILE (read|data|code)" >&2; exit 2;;
 esac
+
+# Passed as text: a second --append-system-prompt-file would replace a file flag, but adds to this one.
+PROMPT_ARGS=()
+if [ "$PROFILE" != read ] && [ "${ORNITH_PROMPT:-dp}" != none ]; then
+  DP_PROMPT="$(cat "$HERE/../references/prompt-dp.txt")"
+  PROMPT_ARGS=(--append-system-prompt "$DP_PROMPT")
+fi
 
 BASE_URL="$(jq -r '.env.ANTHROPIC_BASE_URL' "$SETTINGS")"
 MODELS="$(curl -s -m 3 "$BASE_URL/v1/models" || true)"
@@ -53,7 +63,7 @@ RAW="$(claude --settings "$RUN_SETTINGS" \
   --permission-mode acceptEdits \
   --tools "$tools" --allowedTools "$allowed" \
   --strict-mcp-config --setting-sources "" --disable-slash-commands \
-  "$@" < /dev/null 2>/dev/null)" || RC=$?
+  "${PROMPT_ARGS[@]}" "$@" < /dev/null 2>/dev/null)" || RC=$?
 
 if [ -n "${ORNITH_OUT:-}" ]; then
   mkdir -p "$(dirname "$ORNITH_OUT")"
