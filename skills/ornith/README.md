@@ -5,5 +5,5 @@ Replaced by `../dp-fan-out-subagents`: `scripts/local.sh --model ornith`, with t
 longer load it as a skill.
 
 Kept for old callers, don't delete: `scripts/`, `references/` and `settings.json`. The amd use-case harness
-(`dp-craft/amd/bench/runs/2026-11-05-0320-ornith-usecases/harness/`) runs `scripts/ornith.sh` (its `ORN` default) and
+(`dp-craft/amd/bench/workers/`) runs `scripts/ornith.sh` (its `ORN` default) and
 writes `references/briefs.md`.

@@ -14,7 +14,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETTINGS="${ORNITH_SETTINGS:-$HERE/../settings.json}"
-STARTER=/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh
+STARTER=/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh
 
 PROFILE=read
 if [ "${1:-}" = "--profile" ]; then PROFILE="${2:-}"; shift 2; fi

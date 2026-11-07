@@ -60,20 +60,20 @@ Server labels: `sly-27b` (the 27B on Sly), `rad-ornith` (Ornith on radiance), `o
 | Another model on :8000, another GPU engine, or a benchmark run | Ask before starting anything: the starters unload llama-swap and refuse when VRAM is short |
 
 The session's focus picks the local model to start: agentic coding → 27B, bulk text and data → Ornith. Ask once if unclear, then keep the answer for the session.
-Ornith: `/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh start|stop` (about 45 s, fills the card).
+Ornith: `/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh start|stop` (about 45 s, fills the card).
 27B: `/home/dev/.config/claude/local_vllm_direct/vllm.sh start|stop`.
 
 ## 3. Brief and result file
 
 Every worker writes a result file, so a crash or reset loses no finished work.
 
-1. Reserve a path: `$S/scripts/run-dir.sh <worker> <slug>` prints `<repo>/docs/tmp/<date-time>-<session>/<NN>-<worker>-<slug>.md` (`<repo>`: where the session started; `docs/tmp` ignores itself in git).
+1. Reserve a path: `$S/scripts/run-dir.sh <worker> <slug>` prints `<repo>/docs/tmp/<date-time>-<session>/<NN>-<worker>-<slug>.md` (`<repo>`: where the session started; `notes/tmp` instead when the repo has it; the dir ignores itself in git).
 2. Brief: goal, absolute input paths, constraints, output format, and: "Write the full result to `<file>`. Start it with `STATUS: done|partial|failed` and `SUMMARY:` (at most 3 lines). Do the work yourself; start no subagents. Reply with only the path and the summary." Workers read their inputs; never paste file contents into a brief.
 3. Run:
    - Local: `$S/scripts/local.sh --model ornith|27b --profile read|data|code --out <file> "<brief>"` (Bash; `run_in_background` if over about 2 min; `cd` into the repo for `code`). A repo's agent type: `--agent <name>` in place of `--profile` (`refs/local-27b.md`).
    - Claude: Agent tool, `model` and `effort` from the table.
 4. Read `head -5` of a result, and beyond it only the parts you must act on (questions, gaps). Hand bulk content to another subagent.
-5. After a crash or reset: `head -2` the run dir's files (newest dir: `ls -t <repo>/docs/tmp`) and re-run only those that are empty or not `STATUS: done`.
+5. After a crash or reset: `head -2` the run dir's files (newest dir: `ls -t <repo>/docs/tmp`, or `<repo>/notes/tmp`) and re-run only those that are empty or not `STATUS: done`.
 
 **Parallel cap: 2** — at most this many Claude subagents and this many local runs at once (the 27B: 1, its server runs
 one sequence). This line is the only place that sets it: `local.sh` reads the number from here and enforces it across

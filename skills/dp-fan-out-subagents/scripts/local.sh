@@ -26,7 +26,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETTINGS="${LOCAL_SETTINGS:-$HERE/../settings.json}"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dp-fan-out-subagents"
-ORNITH_STARTER=/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh
+ORNITH_STARTER=/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh
 QWEN_STARTER=/home/dev/.config/claude/local_vllm_direct/vllm.sh
 
 MODEL=""; PROFILE=read; OUT=""; AGENT=""

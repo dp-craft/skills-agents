@@ -2,7 +2,7 @@
 
 Claude Haiku 5.5 as an Agent-tool subagent (`model: haiku`, `effort: high|xhigh|max`). Use it where completeness or
 judgement matters and as Ornith's fallback; not for mechanical work Ornith ties for free. Measured, mostly `n=1`.
-Evidence: `/home/dev/work/dp-craft/amd/docs/analysis/2026-11-06-0930-haiku-manual.md`.
+Evidence: `/home/dev/work/dp-craft/amd/docs/findings/workers/2026-11-06-0930-haiku-manual.md`.
 
 ## Effort
 

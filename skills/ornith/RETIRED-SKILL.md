@@ -7,7 +7,7 @@ compatibility:
     - claude (Claude Code CLI)
     - jq
     - python3
-    - Radiance serving Ornith on 127.0.0.1:8000 (/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh)
+    - Radiance serving Ornith on 127.0.0.1:8000 (/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh)
 ---
 
 # Ornith
@@ -21,7 +21,7 @@ All figures come from measured runs, most of them a single run (`n=1`), on synth
 1. **Check the fit** in the table below. If the task isn't listed, use the closest row under "Untested tasks" and check the result harder.
 2. **Check the size.** "Tokens" means the source material. Estimate with `wc -c` divided by 4. Above the limit, split the work into several sessions.
 3. **Take the brief** from `references/briefs.md` and adapt its file names, labels and output format. The session knows nothing of this conversation, so give absolute paths.
-4. **Start the server if it's down.** `/home/dev/work/dp-craft/amd/ornith_rad_mtp.sh start` takes about 45 s and fills the card. If another model holds port 8000, ask before stopping it.
+4. **Start the server if it's down.** `/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh start` takes about 45 s and fills the card. If another model holds port 8000, ask before stopping it.
 5. **Run it.** Up to 3 sessions can run in parallel; a 4th waits in the queue. Three together gave about 1.46× the total throughput, at about 100 tokens/s per session against 174 alone.
    ```bash
    /home/dev/work/dippe/skills-agents/skills/ornith/scripts/ornith.sh --profile read "<brief>"

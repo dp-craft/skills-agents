@@ -6,7 +6,7 @@ while it is up it also takes the Ornith, Haiku and Sonnet rows by default (SKILL
 tools on the local route), the Opus row (architecture, complex cases, edge-case TDD, mission-critical work) or reviews.
 
 - **Speed:** decode 87/96/82 tokens/s at 10k/50k/100k (Ornith: 220/205/175), measured in
-  `/home/dev/work/dp-craft/amd/docs/analysis/2026-11-04-1746-ornith15-radiance-vs-sly-35b-27b.md`.
+  `/home/dev/work/dp-craft/amd/docs/findings/radiance/2026-11-04-1746-ornith15-radiance-vs-sly-35b-27b.md`.
 - **One session at a time:** `vllm.sh` runs it with `MAXSEQS=1`; `local.sh` queues a second run.
 - **System prompt:** the server's chat template (`dp-sharp`) always adds the `dp` terse prompt, so `local.sh` adds none.
 - **Clean session:** no CLAUDE.md or project settings. Put the project's rules that matter into the brief, or pass

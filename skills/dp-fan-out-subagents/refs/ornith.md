@@ -6,7 +6,7 @@ the result; weak on exhaustive lists and fine judgement. The starter's settings 
 thinking on, default sampler); don't change them. Effort settings do nothing on Ornith.
 
 All figures are measured, mostly `n=1`, on synthetic or repo fixtures; a difference under 0.05 is a tie.
-Evidence: `/home/dev/work/dp-craft/amd/docs/analysis/2026-11-06-0930-ornith-manual.md`.
+Evidence: `/home/dev/work/dp-craft/amd/docs/findings/workers/2026-11-06-0930-ornith-manual.md`.
 
 ## Use
 
