@@ -5,7 +5,7 @@ allowed-tools: Bash(/home/dev/work/dippe/skills-agents/skills/dp-fan-out-subagen
 compatibility:
   tools:
     - claude (Claude Code CLI), jq, python3, flock
-    - Ornith (ornith_rad_mtp.sh) or Qwen 27B (vllm.sh) on 127.0.0.1:8000 for the local routes
+    - Ornith (start_ornith_35b_vllm_rad.sh) or Qwen 27B (vllm.sh) on 127.0.0.1:8000 for the local routes
 ---
 
 # Fan out to subagents
@@ -25,6 +25,8 @@ in the local queue (§4), also behind the 27B's single slot, and never moves to 
 both Ornith slots taken, Haiku still starts only for work Ornith can't do. Claude takes local work only when the local
 model can't run (§2). Free still costs review tokens (§5) and the GPU: Ornith fills the card, so no benchmark runs
 beside it.
+**One local model runs at a time** (each fills the card), so route by what is up: Ornith takes its row (fast bulk
+processing), the 27B the Haiku and Sonnet rows (and Ornith's row). Don't switch servers to fit a task.
 
 | Task | Worker | Effort |
 |---|---|---|
@@ -56,11 +58,11 @@ Server labels: `sly-27b` (the 27B on Sly), `rad-ornith` (Ornith on radiance), `o
 | The 27B is up, or the wanted model is up | Run; when the slots are full (this session's runs or other sessions'), `local.sh` waits for one: queue, don't switch to Claude |
 | Other work uses the server: `vllm` shows requests but no run is listed as via local.sh, or headless runs not via local.sh are listed (a pipeline, a benchmark) | Add no local run and no agent that polls the server: use the Claude fallback, or ask |
 | Nothing up | Ask: start it, or use the fallback (Haiku for Ornith work, Sonnet for 27B work) |
-| Ornith is up and the task is 27B work | Ask: switch, use Ornith, or Sonnet. Recommend Sonnet when other sessions or headless runs are listed: they may be using Ornith |
+| Ornith is up and the task is 27B work (Haiku or Sonnet row) | Use the row's Claude worker; don't switch the server |
 | Another model on :8000, another GPU engine, or a benchmark run | Ask before starting anything: the starters unload llama-swap and refuse when VRAM is short |
 
 The session's focus picks the local model to start: agentic coding → 27B, bulk text and data → Ornith. Ask once if unclear, then keep the answer for the session.
-Ornith: `/home/dev/work/dp-craft/amd/stack/serve/radiance/ornith_rad_mtp.sh start|stop` (about 45 s, fills the card).
+Ornith: `/home/dev/work/dp-craft/amd/stack/serve/radiance/start_ornith_35b_vllm_rad.sh start|stop` (about 45 s, fills the card).
 27B: `/home/dev/.config/claude/local_vllm_direct/vllm.sh start|stop`.
 
 ## 3. Brief and result file
