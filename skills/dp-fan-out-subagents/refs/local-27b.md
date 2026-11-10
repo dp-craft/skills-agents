@@ -1,7 +1,8 @@
 # Qwen 27B (local)
 
 RedHatAI Qwen3.8-27B MXFP4 with the DFlash2 drafter on Sly (status label `sly-27b`), port 8000, started by
-`/home/dev/.config/claude/local_vllm_direct/vllm.sh start|stop|status`. Free. Agentic coding and usual implementation;
+`/home/dev/.config/claude/local_vllm_direct/vllm.sh start|stop|status`; or the IQ4 `.rad` on radiance (`rad-27b`,
+`/home/dev/work/dp-craft/amd/stack/serve/radiance/start_qwen38_27b_iq4r-l-v4_rad.sh`). Both serve the same name. Free. Agentic coding and usual implementation;
 while it is up it also takes the Ornith, Haiku and Sonnet rows by default (SKILL.md §1). Not for web search (no web
 tools on the local route), the Opus row (architecture, complex cases, edge-case TDD, mission-critical work) or reviews.
 

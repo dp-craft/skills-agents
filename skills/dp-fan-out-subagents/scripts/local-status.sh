@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # local-status.sh: one line on the local model server, GPU, other GPU engines and Claude sessions, for routing.
 # usage: local-status.sh [--short]    --short prints the server, GPU busy %, VRAM and vLLM's queue (for the status line).
-# Server labels: rad-ornith (Ornith on radiance), sly-27b (the 27b on Sly), other (<served name>), none.
-# Ornith and the 27b both report the 27b's name on :8000; Ornith is told apart by /v1/models .root.
+# Server labels: rad-ornith (Ornith on radiance), sly-27b (the 27b on Sly), rad-27b (the 27b IQ4 .rad on radiance),
+# other (<served name>), none. All three report the 27b's name on :8000; Ornith is told apart by /v1/models .root,
+# the engine by .owned_by.
 PORT=${PORT:-8000}
 
 models=$(curl -s -m 1 "http://127.0.0.1:$PORT/v1/models" 2>/dev/null)
 id=$(jq -r '.data[0].id // empty' <<<"$models" 2>/dev/null)
 root=$(jq -r '.data[0].root // empty' <<<"$models" 2>/dev/null)
+owner=$(jq -r '.data[0].owned_by // empty' <<<"$models" 2>/dev/null)
 case "$root|$id" in
   *ornith*) srv=rad-ornith;;
-  *27b*|*27B*) srv=sly-27b;;
+  *27b*|*27B*) if [ "$owner" = radiance ]; then srv=rad-27b; else srv=sly-27b; fi;;
   "|") srv=none;;
   *) srv="other ($id)";;
 esac

@@ -38,7 +38,7 @@ processing), the 27B the Haiku and Sonnet rows (and Ornith's row). Don't switch 
 | Usual web research | Sonnet | `high` |
 | Investigation, architecture, complex cases, TDD with negative and edge cases, holistic view, mission-critical or high-impact work (token-heavy runners, blockers); reviews and grading, except Ornith's non-code results (§5) | Opus | `high` |
 
-- **While the 27B is up** (`sly-27b` in `local-status.sh`), it also takes the Ornith, Haiku and Sonnet rows by default:
+- **While the 27B is up** (`sly-27b` or `rad-27b` in `local-status.sh`), it also takes the Ornith, Haiku and Sonnet rows by default:
   `local.sh --model 27b` with the row's profile (`read` for lookups and notes, `data` for counts and JSON, `code` or
   `--agent` for code). Not for web search (the local route has no web tools), the Opus row, or reviews (§5).
 - Haiku never below `high`. At `max`, one file or module per call: a 4-file job at `max` thought past the 128k output limit and wrote nothing.
@@ -51,7 +51,7 @@ processing), the 27B the Haiku and Sonnet rows (and Ornith's row). Don't switch 
 ## 2. Local server
 
 Before a local route, run `$S/scripts/local-status.sh` and show its line to the user. Never start, stop or switch a server without the user's yes.
-Server labels: `sly-27b` (the 27B on Sly), `rad-ornith` (Ornith on radiance), `other (<served name>)`, `none`.
+Server labels: `sly-27b` (the 27B on Sly), `rad-27b` (the 27B IQ4 on radiance), `rad-ornith` (Ornith on radiance), `other (<served name>)`, `none`.
 
 | State | Action |
 |---|---|
