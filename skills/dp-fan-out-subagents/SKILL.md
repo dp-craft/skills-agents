@@ -36,7 +36,7 @@ processing), the 27B the Haiku and Sonnet rows (and Ornith's row). Don't switch 
 | A small, clearly specified code change (one file or module); non-trivial analysis (connections, consistency, logical gaps) | Haiku | `max` |
 | Agentic coding, usual implementation of a few tasks | **Qwen 27B** (free) when it is up, else Sonnet | Sonnet: `high` |
 | Usual web research | Sonnet | `high` |
-| Investigation, architecture, complex cases, TDD with negative and edge cases, holistic view, mission-critical or high-impact work (token-heavy runners, blockers); reviews and grading, except Ornith's non-code results (§5) | Opus | `high` |
+| Investigation, architecture, complex cases, TDD with negative and edge cases, holistic view, mission-critical or high-impact work (token-heavy runners, blockers); code reviews and grading (§5) | Opus | `high` |
 
 - **While the 27B is up** (`sly-27b` or `rad-27b` in `local-status.sh`), it also takes the Ornith, Haiku and Sonnet rows by default:
   `local.sh --model 27b` with the row's profile (`read` for lookups and notes, `data` for counts and JSON, `code` or
@@ -118,15 +118,19 @@ Running a split job:
 ## 5. Review (temporary, until the user drops it)
 
 Every code review is Opus `high`: the rows below and any review a repo asks for (e.g. dp-plan's batch review).
-Haiku reviews only Ornith's non-code results, nothing else.
+Haiku never reviews code; it reviews only local workers' non-code results.
 
 | Worker | Reviewer | Effort | Dropped for tasks |
 |---|---|---|---|
-| Ornith, non-code result (`read` or `data` profile) | Haiku | `max` | — |
-| Ornith, code result (`code` profile or `--agent`) | Opus | `high` | — |
+| Ornith or 27B, non-code result (`read` or `data` profile) | Haiku | `max` | — |
+| Ornith or 27B, code result (`code` profile or `--agent`) | Opus | `high` | — |
 | Haiku at `max` | Opus | `high` | — |
+| Opus or Sonnet | none by default | — | all |
 
-The 27B has no row: the user has checked its work (a repo's own review step still runs). Ideas for later: `IDEAS.md`.
+A second Claude pass costs about as much as the work, so Opus and Sonnet results are not reviewed. The orchestrator
+may still ask for an Opus `high` review when the cost is justified (mission-critical or high-impact change, a
+token-heavy runner, a result the user will act on unchecked). When skipped, say so in the report. A repo's own review
+step still runs. Ideas for later: `IDEAS.md`.
 
 **Split jobs (§4) whose pieces share one brief:** review a sample, 1 piece in 5 and at least one: the largest, plus any
 piece that needed a re-run. Each review gets one piece's brief, sources and result, so it fits one session. On a `major`,
@@ -139,7 +143,7 @@ different briefs (code subtasks) are separate tasks: each one is reviewed.
 2. The reviewer gets the brief, the source paths and the result file, and writes `<result minus .md>-review.md`
    starting with `VERDICT: ok|minor|major` (ok: nothing to change; minor: fixes that change no conclusion;
    major: a wrong or missing item that changes a decision), then `ISSUES:` with line references. Reviews are not reviewed.
-3. Log it: `$S/scripts/reviews.py add --worker ornith --reviewer haiku|opus --task <brief tag or short class> --tokens <source bytes / 4> --review-tokens <the reviewer's subagent_tokens> --result <file> --review <file>` (for a Haiku worker add `--worker-tokens`).
+3. Log it: `$S/scripts/reviews.py add --worker ornith|27b|haiku --reviewer haiku|opus --task <brief tag or short class> --tokens <source bytes / 4> --review-tokens <the reviewer's subagent_tokens> --result <file> --review <file>` (for a Haiku worker add `--worker-tokens`).
 4. Pass any `NOTICE:` line to the user. On `major`, the reviewer's model fixes the result from the review file.
 
 `$S/scripts/reviews.py status` shows the counts. To drop a review for some tasks, list them in its row; to drop it fully, delete the row.

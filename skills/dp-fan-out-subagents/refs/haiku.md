@@ -10,7 +10,7 @@ Evidence: `/home/dev/work/dp-craft/amd/docs/findings/workers/2026-11-06-0930-hai
 |---|---|---|
 | `high` (minimum) | Lookups, routine web search, mechanical work when Ornith is unavailable, retyping text | Best incident recall and verdicts at 4 reports; every per-file extraction finished |
 | `xhigh` | Full lists, paths, full configs, incident lists, notes over several documents | Not measured |
-| `max` | Coding, non-trivial analysis (connections, consistency, logical gaps), reviewing Ornith's non-code results (SKILL.md §5) | As a grader closer to Opus than `high` on several fields; one blind grading took 227.5k tokens and 462 s |
+| `max` | Coding, non-trivial analysis (connections, consistency, logical gaps), reviewing local workers' non-code results (SKILL.md §5) | As a grader closer to Opus than `high` on several fields; one blind grading took 227.5k tokens and 462 s |
 
 - **`max` gets one file or module per call.** A 4-file, 844-line extraction at `max` spent 128k thinking tokens without writing, 4 times in a row, and failed with no output.
 - Cost seen per call: 92k–114k tokens for a 219–303-line extraction at `high`.
